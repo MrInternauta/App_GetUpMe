@@ -1,0 +1,7 @@
+{
+  "name": "Getupme",
+  "integrations": {
+    "cordova": {}
+  },
+  "type": "angular"
+}

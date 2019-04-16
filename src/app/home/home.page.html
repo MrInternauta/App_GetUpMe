@@ -1,0 +1,23 @@
+
+<!-- this creates a google map on the page with the given lat/lng from -->
+<!-- the component as the initial center of the map: -->
+<agm-map [latitude]="Mylat" [longitude]="Mylng" [zoom]="18" (mapClick)="clickMap($event)" style="height: 104%">
+  <agm-marker [latitude]="lat" [longitude]="lng" iconUrl="https://image.flaticon.com/icons/svg/58/58960.svg"></agm-marker>
+  <agm-marker [latitude]="Mylat" [longitude]="Mylng" iconUrl="https://image.flaticon.com/icons/svg/58/58960.svg" ></agm-marker>
+  <agm-circle  [latitude]="lat" [longitude]="lng" [radius]="50"
+    [fillColor]="'red'">
+  </agm-circle>
+  <agm-circle [latitude]="Mylat" [longitude]="Mylng" [radius]="50" [fillColor]="'green'">
+  </agm-circle>
+</agm-map>
+
+  
+  <!-- fab placed to the bottom end -->
+  <ion-fab *ngIf="existe" vertical="bottom" horizontal="end" slot="fixed">
+    <ion-fab-button (click)="presentAlertMultipleButtons()" color="danger">
+      <ion-icon name="close"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
+
+
+  
