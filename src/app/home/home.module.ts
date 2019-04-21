@@ -7,7 +7,10 @@ import { AgmCoreModule } from '@agm/core';
 import { Geolocation } from '@ionic-native/geolocation/ngx';
 import { HomePage } from './home.page';
 import { ComponentsModule } from '../components/components.module';
-
+import { Vibration } from '@ionic-native/vibration/ngx';
+import { NativeAudio } from '@ionic-native/native-audio/ngx';
+// import { BackgroundGeolocation, BackgroundGeolocationConfig, BackgroundGeolocationResponse } from '@ionic-native/background-geolocation';
+// import { LocalNotifications } from '@ionic-native/local-notifications/ngx';
 @NgModule({
   imports: [
     CommonModule,
@@ -22,9 +25,13 @@ import { ComponentsModule } from '../components/components.module';
     ]),
     AgmCoreModule.forRoot({
       apiKey: 'AIzaSyArZlxiXTwvKIDiI8cay9kHVMG4YXGSrIs'
-    })
+    }),
   ],
   declarations: [HomePage],
-  providers: [Geolocation]
+  providers: [Geolocation, Vibration,
+    NativeAudio,
+    // BackgroundGeolocation,
+    // LocalNotifications
+    ]
 })
 export class HomePageModule {}

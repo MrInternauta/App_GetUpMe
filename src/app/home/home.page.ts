@@ -1,9 +1,13 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { Geolocation } from '@ionic-native/geolocation/ngx';
-import { ModalController } from '@ionic/angular';
+import { ModalController, Platform } from '@ionic/angular';
 import { MyComponentComponent } from '../components/my-component/my-component.component';
 import { AlertController } from '@ionic/angular';
 import { ToastController } from '@ionic/angular';
+import { NativeAudio } from '@ionic-native/native-audio/ngx';
+import { Vibration } from '@ionic-native/vibration/ngx';
+// import { BackgroundGeolocation, BackgroundGeolocationConfig, BackgroundGeolocationResponse } from '@ionic-native/background-geolocation';
+// import { LocalNotifications } from '@ionic-native/local-notifications/ngx';
 
 @Component({
   selector: 'app-home',
@@ -19,30 +23,73 @@ export class HomePage {
   desactivada: boolean;
   existe: boolean;
   toast: any;
+  toaswaspresent: boolean;
   constructor(
     private geolocation: Geolocation,
     public modalController: ModalController,
     public alertController: AlertController,
-    public toastController: ToastController
+    public toastController: ToastController,
+    private vibration: Vibration,
+    private nativeAudio: NativeAudio,
+    // private localNotifications: LocalNotifications,
+    private platform: Platform
+    // private backgroundGeolocation: BackgroundGeolocation
   ) {
-    this.CargarData();
-    this.GetUbication();
+    if ( this.platform.is('mobile')) {
+          // Schedule a single notification
+    // this.localNotifications.schedule({
+    //   id: 1,
+    //   text: 'Single ILocalNotification',
+    //   // sound: isAndroid? 'file://sound.mp3': 'file://beep.caf',
+    //   data: { secret: 'Hola Mundo' }
+    // });
+    this.nativeAudio.preloadSimple('m1', 'assets/music/alarm-clock.mp3').then(() => {
+      console.log('Music preloaded');
+      this.CargarData();
+      this.GetUbication();
+
+    });
+    return;
+    }
+      this.CargarData();
+      this.GetUbication();
+
+
   }
   ExisteAlarma() {
     (this.km && this.Mylat && this.Mylng && this.lat && this.lng) ? this.existe = true : this.existe = false;
   }
   GetUbication () {
-      this.CargarData();
       const watch = this.geolocation.watchPosition();
       watch.subscribe(data => {
         this.Mylat = data.coords.latitude;
         this.Mylng = data.coords.longitude;
         this.GuardarData();
-        this.ExisteAlarma();
         this.presentToast();
+        this.ExisteAlarma();
         // tslint:disable-next-line:max-line-length
-        if ( (Number(this.calcular_distancia(this.Mylat, this.Mylng, this.lat, this.lng)) <= this.km && !this.desactivada)) {  this.presentAlert(1); }
+        if ( (Number(this.calcular_distancia(data.coords.latitude, data.coords.longitude, this.lat, this.lng)) <= this.km && !this.desactivada)) {
+          this.nativeAudio.play('m1').then(() => {
+            this.presentAlert(1);
+            this.vibration.vibrate(10000);
+          });
+
+        }
       });
+      // Backgroud
+      // const config: BackgroundGeolocationConfig = {
+      //   desiredAccuracy: 10,
+      //   stationaryRadius: 20,
+      //   distanceFilter: 30,
+      //   debug: true, //  enable this hear sounds for background-geolocation life-cycle.
+      //   stopOnTerminate: false, // enable this to clear background location settings when the app terminates
+      //   };
+      //   this.backgroundGeolocation.configure(config)
+      //   .then(() => {
+      //     this.backgroundGeolocation.on('location').subscribe((location: BackgroundGeolocationResponse) => {
+      //       console.log(location);
+      //     });
+      //   });
     }
   CargarData() {
     this.km = Number(localStorage.getItem('km')) || this.km;
@@ -72,12 +119,13 @@ export class HomePage {
     this.lng = undefined;
     this.toastController.dismiss(this.toast);
     this.toastController.dismiss(this.toast);
+    this.toaswaspresent = false;
   }
   clickMap(event) {
     if (this.existe ) { return; }
     this.lat = event.coords.lat;
     this.lng = event.coords.lng;
-    if (Number(this.calcular_distancia(this.Mylat, this.Mylng, this.lat, this.lng)) >= 1 ) { this.presentAlertPrompt(); }
+    if (Number(this.calcular_distancia(this.Mylat, this.Mylng, this.lat, this.lng)) >= .01 ) { this.presentAlertPrompt(); }
   }
   async presentAlert(option: number) {
     const alert = await this.alertController.create({
@@ -87,6 +135,11 @@ export class HomePage {
       buttons: ['OK']
     });
     option === 1 ? this.desactivada = true : this.desactivada = false;
+    if ( option === 1) {
+      this.nativeAudio.stop('m1');
+      this.nativeAudio.unload('m1');
+      // this.backgroundGeolocation.stop();
+    }
     await alert.present();
   }
   async presentAlertMultipleButtons() {
@@ -117,7 +170,7 @@ export class HomePage {
       inputs: [
         {
           name: 'name1',
-          type: 'number',
+          type: 'text',
           placeholder: 'Distancia minima (km)'
         }
       ],
@@ -132,7 +185,7 @@ export class HomePage {
         }, {
           text: 'Ok',
           handler: (data) => {
-            this.km = data.name1 || 1;
+            this.km = Number( data.name1) || .01;
             this.existe = true;
             this.desactivada = false;
             this.GuardarData();
@@ -146,6 +199,7 @@ export class HomePage {
     await alert.present();
   }
   async presentToast() {
+    if (this.toaswaspresent) { return; }
     if (!this.existe) { return; }
     this.toast = await this.toastController.create({
       position: 'top',
@@ -153,6 +207,7 @@ export class HomePage {
       // tslint:disable-next-line:max-line-length
       message: 'Existe una alarma activa!, faltan ' + this.calcular_distancia(this.Mylat, this.Mylng, this.lat, this.lng) + 'km para llegar.',
     });
+    this.toaswaspresent = true;
     this.toast.present();
   }
   async presentModal() {
